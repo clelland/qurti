@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+  <head>
+    <title>Qurti Registration</title>
+  </head>
+  <body>
+    <h1>Registered devices</h1>
+    {% if registered_devices %}
+    <ul>
+      {% for device in registered_devices %}
+      <li>{{ device.id }} | {{ device.ip }}</li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p>None</p>
+    {% endif %}
+<form method="POST">
+New IP <input type="text" name="ip" />
+<input type="submit" />
+</form>
+<form method="POST" action="/clear">
+<input type="submit" value="Clear Data" />
+</form>
+  </body>
+</html>
+{% endautoescape %}

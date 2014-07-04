@@ -1,0 +1,22 @@
+application: google.com:qurti
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: true
+
+handlers:
+- url: /
+  script: register.application
+
+- url: /clear
+  script: register.application
+
+- url: /admin/.*
+  script: admin.app
+  login: admin
+
+libraries:
+- name: webapp2
+  version: latest
+- name: jinja2
+  version: latest
