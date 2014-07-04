@@ -1,3 +1,8 @@
+//var REGISTRATION_SERVER = "http://192.168.1.136:8080/";
+var REGISTRATION_SERVER = "http://192.168.0.22:8080/";
+//var REGISTRATION_SERVER = "http://qurti.googleplex.com/";
+var SERVER_PORT = 8080;
+
 function logEvent(text, level) {
   var logLine = document.createElement('li');
   if (level) {
@@ -21,14 +26,38 @@ function getListenAddress(cb) {
             });
 }
 
+var clientId;
+
+function register(addr, clientId, callback) {
+  var xhr = new XMLHttpRequest();
+  var formData = new FormData();
+
+  xhr.open("POST", REGISTRATION_SERVER);
+  xhr.setRequestHeader('Accept', 'text/json');
+  xhr.onload = function() {
+    if (callback) {
+      callback(xhr.response);
+    }
+  };
+  formData.append("ip", addr);
+  if (clientId) {
+    formData.append("clientId", clientId);
+  }
+  xhr.send(formData);
+}
+
 function startServer() {
   logEvent("Starting server", "info");
   getListenAddress(function(addr) {
     document.getElementById('addr').innerHTML=addr;
+    register(addr, null, function(id) {
+      clientId = id;
+      logEvent("Got clientId: " + clientId);
+    });
   });
   chrome.socket.create('tcp', function(createInfo) {
     logEvent("Socket created: " + createInfo.socketId, "info");
-    chrome.socket.listen(createInfo.socketId, '0.0.0.0', 8080, function(result) {
+    chrome.socket.listen(createInfo.socketId, '0.0.0.0', SERVER_PORT, function(result) {
       if (result === 0) {
         listenForConnectionAndDispatchReceiver(createInfo.socketId);
       } else {
