@@ -8,7 +8,17 @@
     <h1>Controller</h1>
     <h3>IP Addr: <span id="addr"></span></h3>
     <ul />
+    <canvas id="myCanvas" width="400px" height="300px"></canvas>
+    <div>
+       <table>
+       <tr><td><input class="input numeric" type="number" id="px" value="posn x"></td></tr>
+       <tr><td><input type="button" id="bshow" class="btn wide" value="Show" /></td>
+           <td><input type="button" id="bmap" class="btn wide" value="Map" /></td></tr>
+       </table>
+    </div>
     <div id="logs"><ul></ul></div>
     <script src="client.js"></script>
+    <script src="imageview.js"></script>
+    <script src="drawing.js"></script>
   </body>
 </html>
