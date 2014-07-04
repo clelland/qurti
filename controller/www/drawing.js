@@ -7,12 +7,42 @@ function getBoundingRect( d ) {
    return [minx,miny,maxx-minx,maxy-miny];
 }
 
+// rotate a rectangle by radians around a center point
+function rotateRect( rect, cx, cy, angle) {
+   var rnew = [
+     rotatePoint(rect[0][0],rect[0][1],cx,cy,angle),
+     rotatePoint(rect[1][0],rect[1][1],cx,cy,angle),
+     rotatePoint(rect[2][0],rect[2][1],cx,cy,angle),
+     rotatePoint(rect[3][0],rect[3][1],cx,cy,angle)];
+   return rnew;
+}
+
+// rotate a point by radians around a center point
+function rotatePoint(x, y, cx, cy, angle) {
+    return [ Math.cos(angle) * (x-cx) - Math.sin(angle) * (y-cy) + cy,  Math.sin(angle) * (x-cx) + Math.cos(angle) * (y-cy) + cy ];
+}
+
+
 // get the device rotation (in degrees) from its rectangle
 function getRotation( d ) {
    var dy = d.points[1][1] - d.points[0][1];
    var dx = d.points[1][0] - d.points[0][0];
-   var angle = Math.atan2(dy, dx)* 180/Math.PI;
+   var angle = Math.atan2(dy, dx);
    return angle;
+}
+function lineLen(point1, point2) {
+   var dy = point2[1] - point1[1];
+   var dx = point2[0] - point1[0];
+   var len = Math.sqrt(dx*dx+dy*dy);
+   return len;
+}
+// get a scaled representation (width,height) of a device
+function getDeviceSize(d, maxx, maxy) {
+   width = lineLen(d.points[0],d.points[1]);
+   height = lineLen(d.points[1],d.points[2]);
+
+   var scale=Math.min(maxx/width, maxy/height);
+   return {width: width*scale, height: height*scale};
 }
 
 // scale a device rectangle by a factor
@@ -26,9 +56,8 @@ function scaleDevice(d, scale) {
 }
 
 // scale a map to fit in a new width/height
-function scaleMap(map, width, height) {
+function scaleMap(map, scale) {
    var fixedmap={};
-   var scale=Math.min(width/map.width, height/map.height);
    
    fixedmap.width = map.width* scale;
    fixedmap.height = map.height* scale;
@@ -43,7 +72,7 @@ function scaleMap(map, width, height) {
 }
 
 //draw a device shape on a canvas from its map entry
-function drawDevice(d, context) {
+function drawDevice(devkey, d, context) {
 
   // show the top of the device
   context.beginPath();
@@ -70,7 +99,7 @@ function drawDevice(d, context) {
   context.lineWidth=1;
   context.stroke();
 
-  var text = "r="+getRotation(d).toFixed(1);
+  var text = devkey+"="+getRotation(d).toFixed(1);
   context.strokeText(text,rct[0]+rct[2]/2,rct[1]+rct[3]/2);
 }
 
@@ -78,19 +107,25 @@ function drawDevice(d, context) {
 // the image is rotated and translated appropriately and displayed
 // full screen
 
-function drawImage(d, context, imageurl) {
+function drawImage(map, dk, ctx, imageurl) {
   var imageObj = new Image();
-  var rct = getBoundingRect(d);
-  // the rect and angle are relative to the map, the shift/rotate
-  // that needs to be performed is the opposite...
-  var translate = " translate(-"+rct[0]+"px,-"+rct[1]+"px) ";
-  var rot = " rotate("+(0-getRotation(d))+"deg) ";
-  context.canvas.style.transform=translate+rot;
 
   imageObj.onload = function() {
-      context.drawImage(imageObj,0,0);
-  };
+    // scale the map to match the image
+    // this makes the image fit IN the map, not fitting the map into the image
+    var scale=Math.max(imageObj.width/map.width, imageObj.height/map.height);
+    var mymap = scaleMap(map, scale);
+    var d = mymap.devices[dk];
+    var rct = getBoundingRect(d);
+    var rot = -getRotation(d);
+    // move the image to the center of the map - one direction should be 0...
+    var offset = [(mymap.width-imageObj.width)/2, (mymap.height-imageObj.height)/2];
 
+    ctx.translate(-(rct[0]-offset[0]), -(rct[1]-offset[1]));
+    ctx.rotate(rot);
+    ctx.drawImage(imageObj,0,0)
+  }
   imageObj.src = imageurl;
+
 }
 
