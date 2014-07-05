@@ -11,6 +11,9 @@ handlers:
 - url: /clear
   script: register.application
 
+- url: /map
+  script: map.application
+
 - url: /admin/.*
   script: admin.app
   login: admin
