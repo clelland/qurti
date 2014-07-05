@@ -101,4 +101,4 @@ function sendCommand(socketId, command, callback) {
     });
 }
 
-window.onload = startController;
+window.addEventListener('load', startController);

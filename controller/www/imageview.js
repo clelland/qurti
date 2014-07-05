@@ -77,8 +77,8 @@ var mapdata = {
 } 
 
 
-  window.onload = function() {
+window.addEventListener('load', function() {
     document.querySelector('input#bshow').onclick=showimage; 
     document.querySelector('input#bmap').onclick=showmap; 
-  }
+  });
 
