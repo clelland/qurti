@@ -1,3 +1,9 @@
+//var REGISTRATION_SERVER = "http://192.168.1.136:8080/";
+var REGISTRATION_URL = "http://192.168.0.22:8080/";
+var MAP_URL = "http://192.168.0.22:8080/map";
+//var REGISTRATION_SERVER = "http://qurti.googleplex.com/";
+var DISPLAY_SERVER_PORT = 8080;
+
 function logEvent(text, level) {
   var logLine = document.createElement('li');
   if (level) {
@@ -21,16 +27,54 @@ function getListenAddress(cb) {
             });
 }
 
-var displays = {};
-displays[1] = {"clientIp": "192.168.1.130"};
-displays[2] = {"clientIp": "192.168.1.124"};
+
+function getMap(callback) {
+  var xhr = new XMLHttpRequest();
+  var formData = new FormData();
+
+  xhr.open("GET", MAP_URL);
+  xhr.setRequestHeader('Accept', 'text/json');
+  xhr.onload = function() {
+    if (callback) {
+      callback(xhr.response);
+    }
+  };
+  xhr.send();
+}
+
+function getDisplays(callback) {
+  var xhr = new XMLHttpRequest();
+  var formData = new FormData();
+
+  xhr.open("GET", REGISTRATION_URL);
+  xhr.setRequestHeader('Accept', 'text/json');
+  xhr.onload = function() {
+    if (callback) {
+      callback(JSON.parse(xhr.response));
+    }
+  };
+  xhr.send();
+}
+
+var displays;
 
 function startController() {
   logEvent("Starting controller", "info");
   getListenAddress(function(addr) {
     document.getElementById('addr').innerHTML=addr;
   });
-connectAll();
+  getDisplays(function(displayList) {
+    displays = displayList;
+    connectAll(function() {
+       displayAllRegistrationImages(function() {
+         // take picture, send map, then
+         getMap(function(map) {
+           console.log(map);
+           logEvent("Got a map");
+         });
+       });
+    });
+  });
 // here
 }
 
@@ -38,9 +82,11 @@ connectAll = function() {
     forEachDisplay(function(display) {
   chrome.socket.create('tcp', function(createInfo) {
     logEvent("Socket created: " + createInfo.socketId, "info");
-    chrome.socket.connect(createInfo.socketId, display.clientIp, 8080, function(result) {
+logEvent("Connecting to " + display.ip);
+    chrome.socket.connect(createInfo.socketId, display.ip, 8080, function(result) {
       if (result === 0) {
         display.socketId = createInfo.socketId;
+        logEvent("Connected to " + display.ip);
       } else {
         logEvent("Error on socket.connect: " + result, "error");
       }
