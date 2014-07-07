@@ -85,6 +85,7 @@ function startController() {
          getMap().then(function(map) {
            console.log(map);
            logEvent("Got a map");
+           Q.all(clearAllDisplays());
          });
        });
     });
@@ -120,12 +121,12 @@ function test(index) {
   displayRegistrationImage(displays[index], function(msg) { logEvent(msg); });
 }
 
-function displayRegistrationImage(socketId, callback) {
-    return sendCommand(socketId, "REGISTER", callback);
+function displayRegistrationImage(socketId) {
+    return sendCommand(socketId, "REGISTER");
 }
 
-function clearDisplay(socketId, callback) {
-    return sendCommand(socketId, "CLEAR", callback);
+function clearDisplay(socketId) {
+    return sendCommand(socketId, "CLEAR");
 }
 
 // Returns an array of results (in the case where the passed-in function
@@ -147,7 +148,12 @@ function forEachConnectedDisplay(fn) {
   return x;
 }
 
-clearAllDisplays = function() { forEachConnectedDisplay(function(display) { clearDisplay(display, function() {}); }); };
+clearAllDisplays = function() {
+  return forEachConnectedDisplay(function(display) {
+    return clearDisplay(display.socketId);
+  });
+};
+
 displayAllRegistrationImages = function() {
   return forEachConnectedDisplay(function(display) {
     return displayRegistrationImage(display.socketId);
@@ -159,10 +165,8 @@ function sendCommand(socketId, command) {
   // Something about
 logEvent("writing " + command + " to socket " + socketId);
   return write(socketId, buildCommand(command)).then(function() {
-logEvent("reading from socket " + socketId);
     return read(socketId, 1024);
   }).then(function(data) {
-logEvent("Got data: " + data);
     if (data.substring(0,2) == "OK") {
       return("OK");
     } else {
