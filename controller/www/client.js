@@ -43,8 +43,7 @@ function getMap() {
     xhr.open("GET", MAP_URL);
     xhr.setRequestHeader('Accept', 'text/json');
     xhr.onload = function() {
-console.log(xhr.response);
-      y(xhr.response);
+      y(JSON.parse(xhr.response));
     };
     xhr.onerror = function() {
       n(xhr);
@@ -85,7 +84,7 @@ function startController() {
          getMap().then(function(map) {
            console.log(map);
            logEvent("Got a map");
-           Q.all(clearAllDisplays());
+           Q.all(clearAllDisplays()).then(function() { Q.all(sendMapToClients(map)); });
          });
        });
     });
@@ -129,6 +128,10 @@ function clearDisplay(socketId) {
     return sendCommand(socketId, "CLEAR");
 }
 
+function sendMap(socketId, map) {
+    return sendCommand(socketId, "MAP", map);
+}
+
 // Returns an array of results (in the case where the passed-in function
 // returns a promise, returns an array of promises)
 function forEachDisplay(fn) {
@@ -162,11 +165,18 @@ displayAllRegistrationImages = function() {
   });
 };
 
+// Returns an array of promises
+sendMapToClients = function(map) {
+  return forEachConnectedDisplay(function(display) {
+    return sendMap(display.socketId, map);
+  });
+};
+
 // Returns a promise
-function sendCommand(socketId, command) {
+function sendCommand(socketId, command, params) {
   // Something about
 logEvent("writing " + command + " to socket " + socketId);
-  return write(socketId, buildCommand(command)).then(function() {
+  return write(socketId, buildCommand(command, params)).then(function() {
     return read(socketId, 1024);
   }).then(function(data) {
     if (data.substring(0,2) == "OK") {
@@ -177,8 +187,8 @@ logEvent("writing " + command + " to socket " + socketId);
   });
 }
 
-function buildCommand(command) {
-  var data = command + "\r\n\r\n\r\n";
+function buildCommand(command, params) {
+  var data = command + "\r\n" + (typeof params === "undefined" ? "" : JSON.stringify(params)) + "\r\n\r\n";
   var buffer = new ArrayBuffer(data.length);
   var bufferView = new Uint8Array(buffer);
   for (var i=0; i <data.length; i++) bufferView[i] = data.charCodeAt(i); // unicode

@@ -17,13 +17,19 @@ class MapPage(webapp2.RequestHandler):
         map_name = DEFAULT_MAP_NAME
 
         devices = Device.query(ancestor=map_key(map_name)).order(Device.clientId).fetch(200)
-        rendered_devices = [{"id": x.key.integer_id(), "ip": x.ip, "x": i, "y": 0} for i,x in enumerate(devices)]
+        rendered_devices = dict((x.key.integer_id(), { "points": [[i,0],[i+1,0],[i+1,1],[i,1]]}) for i,x in enumerate(devices))
+
+        map_data = {
+          "width": len(devices),
+          "height": 1,
+          "devices": rendered_devices,
+        }
         template_values = {
-            "registered_devices": rendered_devices,
+            "registered_devices": map_data,
         }
         if True:  # self.request.headers.get('Accept') == 'text/json':
             self.response.content_type = "text/json";
-            self.response.write(json.dumps(rendered_devices))
+            self.response.write(json.dumps(map_data))
         else:
             template = JINJA_ENVIRONMENT.get_template('registration.html')
             self.response.write(template.render(template_values))

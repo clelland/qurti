@@ -51,6 +51,7 @@ function register(addr, clientId) {
     if (clientId) {
       formData.append("clientId", clientId);
     }
+    logEvent("Registering at " + REGISTRATION_URL);
     xhr.send(formData);
   });
 }
@@ -132,8 +133,11 @@ function processCommand(socketId) {
     case "requestReceived":
       splitPoint = command.data.indexOf("\r\n\r\n");
       if (splitPoint > -1) {
-        //command.parameters = parseParameters(command.data.substring(0, splitPoint));
-        command.parameters = command.data.substring(0, splitPoint);
+        try {
+          command.parameters = JSON.parse(command.data.substring(0, splitPoint));
+        } catch (e) {
+          command.parameters = command.data.substring(0, splitPoint);
+        }
         command.data = command.data.substring(splitPoint+4);
         command.state = "parametersReceived";
         return processCommand(socketId);
@@ -158,6 +162,8 @@ function executeCommand(command, callback) {
         clearDisplay(callback);
     } else if (verb === "REGISTER") {
         showRegistrationImage(callback);
+    } else if (verb === "MAP") {
+        updateMap(command.parameters, callback);
     } else {
         logEvent("Unrecognized command: " + verb);
         callback();
@@ -172,6 +178,20 @@ function clearDisplay(callback) {
 
 function showRegistrationImage(callback) {
   logEvent("Showing registration image");
+  callback();
+}
+
+function updateMap(map, callback) {
+  if (map.width && map.height) {
+    logEvent("Set area to : " + map.width + " x " + map.height);
+    if (map.devices[clientId]) {
+      logEvent("Set screen to " + JSON.stringify(map.devices[clientId]));
+    } else {
+     logEvent("Bad Map: No entry for this device");
+    }
+  } else {
+    logEvent("Bad Map: No width or height");
+  }
   callback();
 }
 
