@@ -17,7 +17,7 @@ def map_key(map_name=DEFAULT_MAP_NAME):
     return ndb.Key('Device', map_name)
 
 class Device(ndb.Model):
-    ip = ndb.StringProperty(indexed=False)
+    ip = ndb.StringProperty()
     clientId = ndb.IntegerProperty()
 
 class RegistrationPage(webapp2.RequestHandler):
@@ -39,8 +39,18 @@ class RegistrationPage(webapp2.RequestHandler):
     def post(self):
         map_name = DEFAULT_MAP_NAME
 
-        device = Device(parent=map_key(map_name))
-        device.ip = self.request.get('ip')
+        ip = self.request.get('ip')
+        clientId = self.request.get('clientId')
+
+        existing_devices = Device.query(Device.ip==ip, ancestor=map_key(map_name)).iter(keys_only=True)
+        ndb.delete_multi(existing_devices)
+
+        if clientId:
+            device = ndb.Key('Device', map_name, 'Device', int(clientId)).get()
+        else:
+            device = Device(parent=map_key(map_name))
+        device.ip = ip
+
         key = device.put()
         if self.request.headers.get('Accept') == 'text/json':
             self.response.content_type = "text/plain";
