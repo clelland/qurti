@@ -1,6 +1,6 @@
-var REGISTRATION_SERVER = "http://192.168.1.136:8080/";
-//var REGISTRATION_SERVER = "http://192.168.0.18:8080/";
-//var REGISTRATION_SERVER = "http://qurti.googleplex.com/";
+var REGISTRATION_URL = "http://192.168.1.136:8080/";
+//var REGISTRATION_URL = "http://192.168.0.18:8080/";
+//var REGISTRATION_URL = "http://qurti.googleplex.com/";
 var SERVER_PORT = 8080;
 
 function logEvent(text, level) {
@@ -13,47 +13,58 @@ function logEvent(text, level) {
   console.log(text);
 }
 
-function getListenAddress(cb) {
-            chrome.socket.getNetworkList(function(interfaces) {
-                // Filter out ipv6 addresses.
-                var ret = interfaces.filter(function(i) {
-                    return i.address.indexOf(':') === -1;
-                }).map(function(i) {
-                    return i.address;
-                }).join(', ');
-                listenAddress = ret;
-                cb(ret);
-            });
+function getListenAddress() {
+  return Q.promise(function(y,n) {
+    chrome.socket.getNetworkList(function(interfaces) {
+      if (chrome.runtime.lastError) {
+        n(chrome.runtime.lastError);
+      } else {
+        // Filter out ipv6 addresses.
+        var ret = interfaces.filter(function(i) {
+          return i.address.indexOf(':') === -1;
+        }).map(function(i) {
+          return i.address;
+        }).join(', ');
+        listenAddress = ret;
+        y(ret);
+      }
+    });
+  });
 }
 
 var clientId;
 
-function register(addr, clientId, callback) {
-  var xhr = new XMLHttpRequest();
-  var formData = new FormData();
+function register(addr, clientId) {
+  return Q.promise(function(y,n) {
+    var xhr = new XMLHttpRequest();
+    var formData = new FormData();
 
-  xhr.open("POST", REGISTRATION_SERVER);
-  xhr.setRequestHeader('Accept', 'text/json');
-  xhr.onload = function() {
-    if (callback) {
-      callback(xhr.response);
+    xhr.open("POST", REGISTRATION_URL);
+    xhr.setRequestHeader('Accept', 'text/json');
+    xhr.onload = function() {
+      y(xhr.response);
+    };
+    xhr.onerror = function() {
+      n(xhr);
+    };
+    formData.append("ip", addr);
+    if (clientId) {
+      formData.append("clientId", clientId);
     }
-  };
-  formData.append("ip", addr);
-  if (clientId) {
-    formData.append("clientId", clientId);
-  }
-  xhr.send(formData);
+    xhr.send(formData);
+  });
 }
 
 function startServer() {
   logEvent("Starting server", "info");
-  getListenAddress(function(addr) {
+  getListenAddress().then(function(addr) {
     document.getElementById('addr').innerHTML=addr;
-    register(addr, null, function(id) {
-      clientId = id;
-      logEvent("Got clientId: " + clientId);
-    });
+    return addr;
+  }).then(function(addr) {
+    return register(addr, null);
+  }).then(function(id) {
+    clientId = id;
+    logEvent("Got clientId: " + clientId);
   });
   chrome.socket.create('tcp', function(createInfo) {
     logEvent("Socket created: " + createInfo.socketId, "info");
