@@ -35,7 +35,7 @@ function getListenAddress() {
 }
 
 
-function getMap(callback) {
+function getMap() {
   return Q.promise(function(y,n) {
     var xhr = new XMLHttpRequest();
     var formData = new FormData();
@@ -53,7 +53,7 @@ console.log(xhr.response);
   });
 }
 
-function getDisplays(callback) {
+function getDisplays() {
   return Q.promise(function(y,n) {
     var xhr = new XMLHttpRequest();
     var formData = new FormData();
@@ -148,12 +148,14 @@ function forEachConnectedDisplay(fn) {
   return x;
 }
 
+// Returns an array of promises
 clearAllDisplays = function() {
   return forEachConnectedDisplay(function(display) {
     return clearDisplay(display.socketId);
   });
 };
 
+// Returns an array of promises
 displayAllRegistrationImages = function() {
   return forEachConnectedDisplay(function(display) {
     return displayRegistrationImage(display.socketId);
@@ -207,4 +209,5 @@ function read(socketId, bufferSize) {
     });
   });
 }
+
 window.addEventListener('load', startController);
