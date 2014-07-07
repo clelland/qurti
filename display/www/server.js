@@ -1,5 +1,5 @@
-//var REGISTRATION_SERVER = "http://192.168.1.136:8080/";
-var REGISTRATION_SERVER = "http://192.168.0.22:8080/";
+var REGISTRATION_SERVER = "http://192.168.1.136:8080/";
+//var REGISTRATION_SERVER = "http://192.168.0.18:8080/";
 //var REGISTRATION_SERVER = "http://qurti.googleplex.com/";
 var SERVER_PORT = 8080;
 

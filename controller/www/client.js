@@ -1,6 +1,7 @@
-//var REGISTRATION_SERVER = "http://192.168.1.136:8080/";
-var REGISTRATION_URL = "http://192.168.0.22:8080/";
-var MAP_URL = "http://192.168.0.22:8080/map";
+var REGISTRATION_URL = "http://192.168.1.136:8080/";
+//var REGISTRATION_URL = "http://192.168.0.18:8080/";
+var MAP_URL = "http://192.168.1.136:8080/map";
+//var MAP_URL = "http://192.168.0.18:8080/map";
 //var REGISTRATION_SERVER = "http://qurti.googleplex.com/";
 var DISPLAY_SERVER_PORT = 8080;
 
