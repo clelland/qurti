@@ -14,61 +14,74 @@ function logEvent(text, level) {
   console.log(text);
 }
 
-function getListenAddress(cb) {
-            chrome.socket.getNetworkList(function(interfaces) {
-                // Filter out ipv6 addresses.
-                var ret = interfaces.filter(function(i) {
-                    return i.address.indexOf(':') === -1;
-                }).map(function(i) {
-                    return i.address;
-                }).join(', ');
-                listenAddress = ret;
-                cb(ret);
-            });
+function getListenAddress() {
+  return Q.promise(function(y,n) {
+    chrome.socket.getNetworkList(function(interfaces) {
+      if (chrome.runtime.lastError) {
+        n(chrome.runtime.lastError);
+      } else {
+        // Filter out ipv6 addresses.
+        var ret = interfaces.filter(function(i) {
+          return i.address.indexOf(':') === -1;
+        }).map(function(i) {
+          return i.address;
+        }).join(', ');
+        listenAddress = ret;
+        y(ret);
+      }
+    });
+  });
 }
 
 
 function getMap(callback) {
-  var xhr = new XMLHttpRequest();
-  var formData = new FormData();
+  return Q.promise(function(y,n) {
+    var xhr = new XMLHttpRequest();
+    var formData = new FormData();
 
-  xhr.open("GET", MAP_URL);
-  xhr.setRequestHeader('Accept', 'text/json');
-  xhr.onload = function() {
-    if (callback) {
-      callback(xhr.response);
-    }
-  };
-  xhr.send();
+    xhr.open("GET", MAP_URL);
+    xhr.setRequestHeader('Accept', 'text/json');
+    xhr.onload = function() {
+console.log(xhr.response);
+      y(xhr.response);
+    };
+    xhr.onerror = function() {
+      n(xhr);
+    };
+    xhr.send();
+  });
 }
 
 function getDisplays(callback) {
-  var xhr = new XMLHttpRequest();
-  var formData = new FormData();
+  return Q.promise(function(y,n) {
+    var xhr = new XMLHttpRequest();
+    var formData = new FormData();
 
-  xhr.open("GET", REGISTRATION_URL);
-  xhr.setRequestHeader('Accept', 'text/json');
-  xhr.onload = function() {
-    if (callback) {
-      callback(JSON.parse(xhr.response));
-    }
-  };
-  xhr.send();
+    xhr.open("GET", REGISTRATION_URL);
+    xhr.setRequestHeader('Accept', 'text/json');
+    xhr.onload = function() {
+      y(JSON.parse(xhr.response));
+    };
+    xhr.onerror = function() {
+      n(xhr);
+    };
+    xhr.send();
+  });
 }
 
 var displays;
 
 function startController() {
   logEvent("Starting controller", "info");
-  getListenAddress(function(addr) {
+  getListenAddress().then(function(addr) {
     document.getElementById('addr').innerHTML=addr;
   });
-  getDisplays(function(displayList) {
+  getDisplays().then(function(displayList) {
     displays = displayList;
-    connectAll(function() {
-       displayAllRegistrationImages(function() {
+    Q.all(connectAll()).then(function() {
+       Q.all(displayAllRegistrationImages()).then(function() {
          // take picture, send map, then
-         getMap(function(map) {
+         getMap().then(function(map) {
            console.log(map);
            logEvent("Got a map");
          });
@@ -78,21 +91,28 @@ function startController() {
 // here
 }
 
-connectAll = function() {
-    forEachDisplay(function(display) {
-  chrome.socket.create('tcp', function(createInfo) {
-    logEvent("Socket created: " + createInfo.socketId, "info");
-logEvent("Connecting to " + display.ip);
-    chrome.socket.connect(createInfo.socketId, display.ip, 8080, function(result) {
-      if (result === 0) {
-        display.socketId = createInfo.socketId;
-        logEvent("Connected to " + display.ip);
-      } else {
-        logEvent("Error on socket.connect: " + result, "error");
-      }
+function connect(display) {
+  return Q.promise(function (y,n) {
+    chrome.socket.create('tcp', function(createInfo) {
+      logEvent("Socket created: " + createInfo.socketId, "info");
+      logEvent("Connecting to " + display.ip);
+      chrome.socket.connect(createInfo.socketId, display.ip, DISPLAY_SERVER_PORT, function(result) {
+        if (result === 0) {
+          display.socketId = createInfo.socketId;
+          logEvent("Connected to " + display.ip);
+          y(display);
+        } else {
+          logEvent("Error on socket.connect: " + result, "error");
+          n(result);
+        }
+      });
     });
   });
-    });
+}
+
+// Returns an array of promises
+connectAll = function() {
+  return forEachDisplay(connect);
 };
 
 function test(index) {
@@ -100,51 +120,86 @@ function test(index) {
 }
 
 function displayRegistrationImage(socketId, callback) {
-    sendCommand(socketId, "REGISTER", callback);
+    return sendCommand(socketId, "REGISTER", callback);
 }
 
 function clearDisplay(socketId, callback) {
-    sendCommand(socketId, "CLEAR", callback);
+    return sendCommand(socketId, "CLEAR", callback);
 }
 
+// Returns an array of results (in the case where the passed-in function
+// returns a promise, returns an array of promises)
 function forEachDisplay(fn) {
-    Object.keys(displays).forEach(function(key, index) {
-        fn(displays[key]);
-    });
+  return displays.map(function(display) {
+    return fn(display);
+  });
 }
 
+// Returns an array of results (in the case where the passed-in function
+// returns a promise, returns an array of promises)
 function forEachConnectedDisplay(fn) {
-    Object.keys(displays).forEach(function(key, index) {
-        if (displays[key].socketId) { fn(displays[key].socketId); }
-    });
+  var x = displays.filter(function(display) {
+    return !!(display.socketId);
+  }).map(function(display) {
+    return fn(display); // was display.socketId
+  });
+  return x;
 }
 
 clearAllDisplays = function() { forEachConnectedDisplay(function(display) { clearDisplay(display, function() {}); }); };
-displayAllRegistrationImages = function() { forEachConnectedDisplay(function(display) { displayRegistrationImage(display, function() {}); }); };
+displayAllRegistrationImages = function() {
+  return forEachConnectedDisplay(function(display) {
+    return displayRegistrationImage(display.socketId);
+  });
+};
 
-function sendCommand(socketId, command, callback) {
-    var data = command + "\r\n\r\n\r\n";
-    var buffer = new ArrayBuffer(data.length);
-    var bufferView = new Uint8Array(buffer);
-    for (var i=0; i <data.length; i++) bufferView[i] = data.charCodeAt(i); // unicode
-    chrome.socket.write(socketId, buffer, function(writeInfo) {
-      if (writeInfo.bytesWritten >= 0) {
-        var readData = "";
-        chrome.socket.read(socketId, 1024, function(readInfo) {
-          var rawData = new Uint8Array(readInfo.data);
-          for (var i=0; i < readInfo.data.byteLength; i++) {
-            readData += String.fromCharCode(rawData[i]); // unicode
-          }
-          if (readData.substring(0,2) == "OK") {
-            callback("OK");
-          } else {
-            callback("Something");
-          }
-        });
-      } else {
-        callback("ERROR!");
-      }
-    });
+// Returns a promise
+function sendCommand(socketId, command) {
+  // Something about
+logEvent("writing " + command + " to socket " + socketId);
+  return write(socketId, buildCommand(command)).then(function() {
+logEvent("reading from socket " + socketId);
+    return read(socketId, 1024);
+  }).then(function(data) {
+logEvent("Got data: " + data);
+    if (data.substring(0,2) == "OK") {
+      return("OK");
+    } else {
+      throw new Error("Something");
+    }
+  });
 }
 
+function buildCommand(command) {
+  var data = command + "\r\n\r\n\r\n";
+  var buffer = new ArrayBuffer(data.length);
+  var bufferView = new Uint8Array(buffer);
+  for (var i=0; i <data.length; i++) bufferView[i] = data.charCodeAt(i); // unicode
+  return buffer;
+}
+
+function write(socketId, buffer) {
+  return Q.promise(function(y, n) {
+    chrome.socket.write(socketId, buffer, function(writeInfo) {
+      if (writeInfo.bytesWritten >= 0) {
+        y(writeInfo);
+      } else {
+        n(writeInfo);
+      }
+    });
+  });
+}
+
+function read(socketId, bufferSize) {
+  return Q.promise(function(y, n) {
+    var readData = "";
+    chrome.socket.read(socketId, bufferSize, function(readInfo) {
+      var rawData = new Uint8Array(readInfo.data);
+      for (var i=0; i < readInfo.data.byteLength; i++) {
+        readData += String.fromCharCode(rawData[i]); // unicode
+      }
+      y(readData);
+    });
+  });
+}
 window.addEventListener('load', startController);
