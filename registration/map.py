@@ -12,16 +12,24 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     extensions=['jinja2.ext.autoescape'],
     autoescape=True)
 
+SAMPLE_MAP = [
+  { "points" : [[0,0],[100,0],[100,200],[0,200]]},
+  { "points" : [[150,3],[250,20],[220,220],[120,200]]},
+  { "points" : [[340,303],[570,303],[570,420],[340,420]]},
+  { "points" : [[ 40,303],[270,303],[270,420],[ 40,420]]},
+  { "points" : [[444,104],[497,189],[327,294],[264,218]]},
+]
+
 class MapPage(webapp2.RequestHandler):
     def get(self):
         map_name = DEFAULT_MAP_NAME
 
         devices = Device.query(ancestor=map_key(map_name)).order(Device.clientId).fetch(200)
-        rendered_devices = dict((x.key.integer_id(), { "points": [[i,0],[i+1,0],[i+1,1],[i,1]]}) for i,x in enumerate(devices))
+        rendered_devices = dict(zip([x.key.integer_id() for x in devices], SAMPLE_MAP))
 
         map_data = {
-          "width": len(devices),
-          "height": 1,
+          "width": 640,
+          "height": 480,
           "devices": rendered_devices,
         }
         template_values = {
