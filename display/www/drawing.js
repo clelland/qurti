@@ -157,7 +157,7 @@ function drawImage(map, dk, ctx, imageurl) {
     var trans =  [(rct[0] - d.points[0][0])*devscale, (rct[1] - d.points[0][1])*devscale];
     ctx.rotate(rot);
 
-    ctx.drawImage(imageObj,rct[0]-imageoffset[0]-1,rct[1]-imageoffset[1]-1, rct[2]+1,rct[3]+1, trans[0],trans[1],rct[2]*devscale,rct[3]*devscale);
+    ctx.drawImage(imageObj,rct[0]-imageoffset[0],rct[1]-imageoffset[1], rct[2],rct[3], trans[0],trans[1],rct[2]*devscale,rct[3]*devscale);
   }
   imageObj.src = imageurl;
 

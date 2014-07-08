@@ -6,7 +6,6 @@ function blankImage() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   context.clearRect(0, 0, canvas.width, canvas.height);
-  canvas.style.border="thin dotted blue";
   showCanvas(true);
 }
 
