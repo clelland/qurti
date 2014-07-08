@@ -89,6 +89,10 @@ function startController() {
        });
     });
   });
+  document.getElementById('drawURL').addEventListener('click', function(ev) {
+    var url = document.getElementById('url').value;
+    Q.all(drawUrlOnAllClients(url));
+  });
 // here
 }
 
@@ -132,6 +136,10 @@ function sendMap(socketId, map) {
     return sendCommand(socketId, "MAP", map);
 }
 
+function drawFullPicture(socketId, url) {
+    return sendCommand(socketId, "DRAWFULL", url);
+}
+
 // Returns an array of results (in the case where the passed-in function
 // returns a promise, returns an array of promises)
 function forEachDisplay(fn) {
@@ -169,6 +177,13 @@ displayAllRegistrationImages = function() {
 sendMapToClients = function(map) {
   return forEachConnectedDisplay(function(display) {
     return sendMap(display.socketId, map);
+  });
+};
+
+// Returns an array of promises
+drawUrlOnAllClients = function(url) {
+  return forEachConnectedDisplay(function(display) {
+    return drawFullPicture(display.socketId, url);
   });
 };
 

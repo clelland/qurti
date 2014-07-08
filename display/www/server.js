@@ -164,6 +164,8 @@ function executeCommand(command, callback) {
         showRegistrationImage(callback);
     } else if (verb === "MAP") {
         updateMap(command.parameters, callback);
+    } else if (verb === "DRAWFULL") {
+        drawFullImageFromURL(command.parameters, callback);
     } else {
         logEvent("Unrecognized command: " + verb);
         callback();
@@ -192,6 +194,11 @@ function updateMap(map, callback) {
   } else {
     logEvent("Bad Map: No width or height");
   }
+  callback();
+}
+
+function drawFullImageFromURL(url, callback) {
+  logEvent("Draw full image: " + url);
   callback();
 }
 
