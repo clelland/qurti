@@ -80,8 +80,8 @@ function scaleDevice(d, scale) {
 function scaleMap(map, scale) {
    var fixedmap={};
    
-   fixedmap.width = map.width* scale;
-   fixedmap.height = map.height* scale;
+   fixedmap.width = Math.round(map.width* scale);
+   fixedmap.height = Math.round(map.height* scale);
    fixedmap.devices = new Object();
     for( dk in map.devices) {
       if(map.devices.hasOwnProperty(dk)) {
@@ -145,19 +145,19 @@ function drawImage(map, dk, ctx, imageurl) {
     var d = mymap.devices[dk];
     var rct = getBoundingRect(d);
     var rot = -getRotation(d);
+
     // move the image to the center of the map - one direction should be 0...
     var imageoffset = [Math.floor((mymap.width-imageObj.width)/2), Math.floor((mymap.height-imageObj.height)/2)];
 
-    // compensate for the fact the the image might not fill the canvas
-    // the left & top are OK due to offset, the bottom and right need attention
-    var fragmentsize = [Math.min(imageoffset[0]+imageObj.width,rct[2]), Math.min(imageoffset[1]+imageObj.height,rct[3])];
     var devsize = getDeviceSize(d);
-    var devscale = Math.min(ctx.canvas.width/devsize.width, ctx.canvas.height/devsize.height);
+    var devscale = Math.max(ctx.canvas.width/devsize.width, ctx.canvas.height/devsize.height);
+
     // the rotate center is the Top Left of the bounding rect
     // the desired rotation is the first device point (top-left)
     var trans =  [(rct[0] - d.points[0][0])*devscale, (rct[1] - d.points[0][1])*devscale];
     ctx.rotate(rot);
-    ctx.drawImage(imageObj,rct[0]-imageoffset[0],rct[1]-imageoffset[1], fragmentsize[0],fragmentsize[1], trans[0],trans[1],rct[2]*devscale,rct[3]*devscale);
+
+    ctx.drawImage(imageObj,rct[0]-imageoffset[0]-1,rct[1]-imageoffset[1]-1, rct[2]+1,rct[3]+1, trans[0],trans[1],rct[2]*devscale,rct[3]*devscale);
   }
   imageObj.src = imageurl;
 
