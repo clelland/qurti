@@ -1,27 +1,42 @@
 
-function showimage () {
+function blankImage() {
   var canvas = document.getElementById('myCanvas');
   var context = canvas.getContext('2d');
   context.setTransform(1, 0, 0, 1, 0, 0);
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
   context.clearRect(0, 0, canvas.width, canvas.height);
   canvas.style.border="thin dotted blue";
+  showCanvas(true);
+}
 
-  var inp = document.getElementById('px');
-  var did = inp.value;
-  if(did=="") did =0;
-  var dk = Object.keys(mapdata.devices)[did];
-  var d = mapdata.devices[dk];
-// this bit is to fake a place to put it
-  var devsize = getScaledDeviceSize(d, 400, 300);
-  canvas.width = devsize.width;
-  canvas.height = devsize.height;
+function showCanvas(state) {
+  var imgdiv = document.getElementById('imagediv');
+  if(state) {
+    imgdiv.style.display = '';
+  } else {
+    imgdiv.style.display = 'none';
+  }
+}
 
-  drawImage(mapdata, dk, context,'Chromelogo.png');
+function showDebug() {
+   showCanvas(false);
+}
 
+function showimage (url) {
+  var canvas = document.getElementById('myCanvas');
+  var context = canvas.getContext('2d');
+  blankImage();
+
+  if(clientId) {
+    var d = mapdata.devices[clientId];
+    drawImage(mapdata, clientId, context,url);
+  } else {
+    context.strokeText(text,10,10);
+  }
 }
 
 
-}
 
 // map data is the actual points of the outer corners of the device screen
 // the points are ordered top left, top right, bottom left, bottom right
@@ -41,9 +56,4 @@ var mapdata = {
   }
 } 
 
-
-window.addEventListener('load', function() {
-    document.querySelector('input#bshow').onclick=showimage; 
-    document.querySelector('input#bmap').onclick=showmap; 
-  });
 

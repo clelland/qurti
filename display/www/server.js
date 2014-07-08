@@ -166,6 +166,8 @@ function executeCommand(command, callback) {
         updateMap(command.parameters, callback);
     } else if (verb === "DRAWFULL") {
         drawFullImageFromURL(command.parameters, callback);
+    } else if (verb === "DEBUG") {
+        showDebugDisplay(callback);
     } else {
         logEvent("Unrecognized command: " + verb);
         callback();
@@ -175,6 +177,13 @@ function executeCommand(command, callback) {
 
 function clearDisplay(callback) {
   logEvent("Cleared display");
+  blankImage();
+  callback();
+}
+
+function showDebugDisplay(callback) {
+  logEvent("Displayed debug info");
+  showDebug();
   callback();
 }
 
@@ -187,6 +196,7 @@ function updateMap(map, callback) {
   if (map.width && map.height) {
     logEvent("Set area to : " + map.width + " x " + map.height);
     if (map.devices[clientId]) {
+      mapdata = map;
       logEvent("Set screen to " + JSON.stringify(map.devices[clientId]));
     } else {
      logEvent("Bad Map: No entry for this device");
@@ -199,6 +209,7 @@ function updateMap(map, callback) {
 
 function drawFullImageFromURL(url, callback) {
   logEvent("Draw full image: " + url);
+  showimage(url);
   callback();
 }
 
