@@ -1,9 +1,9 @@
 // return the aligned bounding rectangle that contains the (potentially rotated) device shape 
 function getBoundingRect( d ) {
-   var minx = Math.min(d.points[0][0],d.points[1][0],d.points[2][0],d.points[3][0]);
-   var maxx = Math.max(d.points[0][0],d.points[1][0],d.points[2][0],d.points[3][0]);
-   var miny = Math.min(d.points[0][1],d.points[1][1],d.points[2][1],d.points[3][1]);
-   var maxy = Math.max(d.points[0][1],d.points[1][1],d.points[2][1],d.points[3][1]);
+   var minx = Math.floor(Math.min(d.points[0][0],d.points[1][0],d.points[2][0],d.points[3][0]));
+   var maxx = Math.ceil(Math.max(d.points[0][0],d.points[1][0],d.points[2][0],d.points[3][0]));
+   var miny = Math.floor(Math.min(d.points[0][1],d.points[1][1],d.points[2][1],d.points[3][1]));
+   var maxy = Math.ceil(Math.max(d.points[0][1],d.points[1][1],d.points[2][1],d.points[3][1]));
    return [minx,miny,maxx-minx,maxy-miny];
 }
 
@@ -19,9 +19,25 @@ function rotateRect( rect, cx, cy, angle) {
 
 // rotate a point by radians around a center point
 function rotatePoint(x, y, cx, cy, angle) {
-    return [ Math.cos(angle) * (x-cx) - Math.sin(angle) * (y-cy) + cy,  Math.sin(angle) * (x-cx) + Math.cos(angle) * (y-cy) + cy ];
+    return [ Math.cos(angle) * (x-cx) - Math.sin(angle) * (y-cy) + cx,  Math.sin(angle) * (x-cx) + Math.cos(angle) * (y-cy) + cy ];
 }
 
+// get the center of a device
+function getDeviceCenter(d) {
+   var x1 = Math.max(d.points[0][0],d.points[1][0],d.points[2][0],d.points[3][0]);
+   var x2 = Math.min(d.points[0][0],d.points[1][0],d.points[2][0],d.points[3][0]);
+   var y1 = Math.max(d.points[0][1],d.points[1][1],d.points[2][1],d.points[3][1]);
+   var y2 = Math.min(d.points[0][1],d.points[1][1],d.points[2][1],d.points[3][1]);
+   var center = [x2+(x1-x2)/2, y2+(y1-y2)/2]; 
+   return center;
+}
+
+// get the translation to adjust for the incorrect rotation center
+function getRotationCorrection(dc, offset, angle) {
+   var p = rotatePoint(dc[0], dc[1], offset[0],offset[1],angle);
+   var trans = [dc[0]-p[0],dc[1]-p[1]];
+   return trans;
+}
 
 // get the device rotation (in degrees) from its rectangle
 function getRotation( d ) {
@@ -36,21 +52,26 @@ function lineLen(point1, point2) {
    var len = Math.sqrt(dx*dx+dy*dy);
    return len;
 }
-// get a scaled representation (width,height) of a device
-function getDeviceSize(d, maxx, maxy) {
-   width = lineLen(d.points[0],d.points[1]);
-   height = lineLen(d.points[1],d.points[2]);
+// get device size
+function getDeviceSize(d) {
+   width = Math.ceil(lineLen(d.points[0],d.points[1]));
+   height = Math.ceil(lineLen(d.points[1],d.points[2]));
+   return {width: width, height: height};
+}
 
-   var scale=Math.min(maxx/width, maxy/height);
-   return {width: width*scale, height: height*scale};
+// get a scaled representation (width,height) of a device
+function getScaledDeviceSize(d, maxx, maxy) {
+   var s= getDeviceSize(d)
+   var scale=Math.min(maxx/s.width, maxy/s.height);
+   return {width: s.width*scale, height: s.height*scale};
 }
 
 // scale a device rectangle by a factor
 function scaleDevice(d, scale) {
   var shape=[[0,0],[0,0],[0,0],[0,0]];
   for(var i =0;i<4;i++) {
-     shape[i][0] = d.points[i][0]*scale;
-     shape[i][1] = d.points[i][1]*scale;
+     shape[i][0] = Math.round(d.points[i][0]*scale);
+     shape[i][1] = Math.round(d.points[i][1]*scale);
   }
   return shape;
 }
@@ -99,6 +120,12 @@ function drawDevice(devkey, d, context) {
   context.lineWidth=1;
   context.stroke();
 
+  // show the device center
+  var devcenter = getDeviceCenter(d);
+  context.beginPath();
+  context.arc(devcenter[0],devcenter[1],10,0,2*Math.PI);
+  context.stroke();
+
   var text = devkey+"="+getRotation(d).toFixed(1);
   context.strokeText(text,rct[0]+rct[2]/2,rct[1]+rct[3]/2);
 }
@@ -113,17 +140,24 @@ function drawImage(map, dk, ctx, imageurl) {
   imageObj.onload = function() {
     // scale the map to match the image
     // this makes the image fit IN the map, not fitting the map into the image
-    var scale=Math.max(imageObj.width/map.width, imageObj.height/map.height);
-    var mymap = scaleMap(map, scale);
+    var mapscale=Math.max(imageObj.width/map.width, imageObj.height/map.height);
+    var mymap = scaleMap(map, mapscale);
     var d = mymap.devices[dk];
     var rct = getBoundingRect(d);
     var rot = -getRotation(d);
     // move the image to the center of the map - one direction should be 0...
-    var offset = [(mymap.width-imageObj.width)/2, (mymap.height-imageObj.height)/2];
+    var imageoffset = [Math.floor((mymap.width-imageObj.width)/2), Math.floor((mymap.height-imageObj.height)/2)];
 
-    ctx.translate(-(rct[0]-offset[0]), -(rct[1]-offset[1]));
+    // compensate for the fact the the image might not fill the canvas
+    // the left & top are OK due to offset, the bottom and right need attention
+    var fragmentsize = [Math.min(imageoffset[0]+imageObj.width,rct[2]), Math.min(imageoffset[1]+imageObj.height,rct[3])];
+    var devsize = getDeviceSize(d);
+    var devscale = Math.min(ctx.canvas.width/devsize.width, ctx.canvas.height/devsize.height);
+    // the rotate center is the Top Left of the bounding rect
+    // the desired rotation is the first device point (top-left)
+    var trans =  [(rct[0] - d.points[0][0])*devscale, (rct[1] - d.points[0][1])*devscale];
     ctx.rotate(rot);
-    ctx.drawImage(imageObj,0,0)
+    ctx.drawImage(imageObj,rct[0]-imageoffset[0],rct[1]-imageoffset[1], fragmentsize[0],fragmentsize[1], trans[0],trans[1],rct[2]*devscale,rct[3]*devscale);
   }
   imageObj.src = imageurl;
 

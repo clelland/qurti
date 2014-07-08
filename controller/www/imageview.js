@@ -12,7 +12,7 @@ function showimage () {
   var dk = Object.keys(mapdata.devices)[did];
   var d = mapdata.devices[dk];
 // this bit is to fake a place to put it
-  var devsize = getDeviceSize(d, 400, 300);
+  var devsize = getScaledDeviceSize(d, 400, 300);
   canvas.width = devsize.width;
   canvas.height = devsize.height;
 
@@ -45,7 +45,9 @@ function showmap() {
     var size = [imageObj.width*imgscale, imageObj.height*imgscale];
     var offset = [(mymap.width-size[0])/2, (mymap.height-size[1])/2];
     context.drawImage(imageObj,0,0,imageObj.width,imageObj.height,offset[0],offset[1],size[0],size[1]);
-
+    // draw a line to show the edge of the image
+    context.beginPath();
+    context.strokeRect(offset[0],offset[1],size[0],size[1]);
 
     for( dk in mymap.devices) {
       if(mymap.devices.hasOwnProperty(dk)) {
@@ -71,7 +73,7 @@ var mapdata = {
   "d1": { "points" : [[0,0],[100,0],[100,200],[0,200]]},
   "d2": { "points" : [[150,3],[250,20],[220,220],[120,200]]},
   "d3": { "points" : [[340,303],[570,303],[570,420],[340,420]]},
-  "d4": { "points" : [[ 40,303],[270,303],[270,420],[ 40,420]]},
+  "d4": { "points" : [[270,303],[270,420],[ 40,420],[ 40,303]]},
   "d5": { "points" : [[444,104],[497,189],[327,294],[264,218]]}
   }
 } 
