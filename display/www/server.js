@@ -37,13 +37,16 @@ var clientId;
 function getClientId() {
   return Q.promise(function(y,n) {
     if (clientId) {
+    logEvent("Got clientId from var: " + clientId);
       y(clientId);
     } else {
       chrome.storage.local.get("clientId", function(items) {
         if (items.clientId) {
+    logEvent("Got clientId from local storage: " + items.clientId);
           clientId = items.clientId;
           y(items.clientId);
         } else {
+    logEvent("Not got clientId");
           y(null);
         }
       });
