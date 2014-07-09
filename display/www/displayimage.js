@@ -1,19 +1,36 @@
-function drawRegistrationImage(regtoken){
+function drawRegistrationImage(deviceIP){
   blankImage();
   var canvas = document.getElementById('myCanvas');
   var context = canvas.getContext('2d');
-  var barwidth=canvas.width/10;
+  var barwidth=Math.min(canvas.width/10, canvas.height/10);
+  var bitwidth= (canvas.height-barwidth*2)/10;
+  // the whole display should have a red outer border ~1/10 of the screenwidth
+  // with a green center fill and a blue bar across the top inside the red border
   context.fillStyle="#FF0000";
   context.fillRect(0,0, canvas.width,canvas.height);
   context.fillStyle="#00FF00";
   context.fillRect(barwidth,barwidth, canvas.width-(barwidth*2),canvas.height-(barwidth*2));
-
   context.fillStyle="#0000FF";
-  context.fillRect(barwidth,barwidth, canvas.width-(barwidth*2),barwidth);
-  var txtsize = context.measureText(regtoken);
-  txtsize.height=20;
-  context.fillStyle="#000000";
-  context.strokeText(regtoken, canvas.width/2 - txtsize.width/2, canvas.height/2-txtsize.height/2);
+  context.fillRect(barwidth,barwidth, canvas.width-(barwidth*2),bitwidth);
+
+  // now draw the IP inside the green area in blue blocks
+  var bytes =  deviceIP.split('.');
+  for(var i=0;i<bytes.length;i++) {
+    var xoffset=barwidth+i*barwidth;
+    var yoffset=barwidth+bitwidth;
+    drawbits(context, xoffset,yoffset, bytes[i], barwidth, bitwidth);
+  }
+}
+
+// draw a byte as a sequence of rectangles in the current color
+function drawbits(context, xoffset, yoffset, byteval, bitwidth, bitheight) {
+  for(var i=0;i<8;i++) {
+    var mask = 1<<i;
+    var ypos = yoffset+bitheight*(i%8);
+    if(byteval & mask) {
+       context.fillRect(xoffset,ypos,bitwidth,bitheight);
+    }
+  }
 }
 
 function blankImage() {

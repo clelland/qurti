@@ -217,7 +217,8 @@ function showDebugDisplay(callback) {
 
 function showRegistrationImage(callback) {
   logEvent("Showing registration image");
-  drawRegistrationImage(clientId);
+  var ipv4 = getListenAddress();
+  drawRegistrationImage(ipv4);
   callback();
 }
 
