@@ -59,20 +59,9 @@ function showimage (url) {
 // so the first two points define the top edge of the device
 // note that the 'top' is as defined by the device,
 // so if it auto-rotates - that might be a side
+// the ip is not used, just handy for manual mapping
 
-var mapdata_x = {
-  "width": 640,
-  "height": 480,
-  "devices": {
-  "d1": { "points" : [[0,0],[100,0],[100,200],[0,200]]},
-  "d2": { "points" : [[158,25],[253,56],[192,246],[96,215]]},
-  "d3": { "points" : [[340,303],[570,303],[570,420],[340,420]]},
-  "d4": { "points" : [[270,303],[270,420],[ 40,420],[ 40,303]]},
-  "d5": { "points" : [[444,104],[497,189],[327,294],[264,218]]}
-  }
-} 
-
-var mapdate={
+var mapdata={
   "width" : 2682,
   "height" : 2082,
   "devices" : {
