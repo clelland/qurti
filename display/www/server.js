@@ -34,6 +34,31 @@ function getListenAddress() {
 
 var clientId;
 
+function getClientId() {
+  return Q.promise(function(y,n) {
+    if (clientId) {
+      y(clientId);
+    } else {
+      chrome.storage.local.get("clientId", function(items) {
+        if (items.clientId) {
+          clientId = items.clientId;
+          y(items.clientId);
+        } else {
+          y(null);
+        }
+      });
+    }
+  });
+}
+
+function setClientId(id) {
+  return Q.promise(function(y,n) {
+    chrome.storage.local.set({"clientId": id}, function() {
+        y();
+    });
+  });
+}
+
 function register(addr, clientId) {
   return Q.promise(function(y,n) {
     var xhr = new XMLHttpRequest();
@@ -58,14 +83,14 @@ function register(addr, clientId) {
 
 function startServer() {
   logEvent("Starting server", "info");
-  getListenAddress().then(function(addr) {
+  Q.all([getListenAddress(), getClientId()]).then(function(items) {
+    var addr = items[0];
+    var clientId = items[1];
     document.getElementById('addr').innerHTML=addr;
-    return addr;
-  }).then(function(addr) {
-    return register(addr, null);
-  }).then(function(id) {
-    clientId = id;
+    return register(addr, clientId);
+  }).then(function(clientId) {
     logEvent("Got clientId: " + clientId);
+    setClientId(id);
   });
   chrome.socket.create('tcp', function(createInfo) {
     logEvent("Socket created: " + createInfo.socketId, "info");

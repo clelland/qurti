@@ -42,14 +42,18 @@ class RegistrationPage(webapp2.RequestHandler):
         ip = self.request.get('ip')
         clientId = self.request.get('clientId')
 
-        existing_devices = Device.query(Device.ip==ip, ancestor=map_key(map_name)).iter(keys_only=True)
-        ndb.delete_multi(existing_devices)
-
+        device = None
         if clientId:
-            device = ndb.Key('Device', map_name, 'Device', int(clientId)).get()
-        else:
+            try:
+                device = ndb.Key('Device', map_name, 'Device', int(clientId)).get()
+            except ValueError:
+                pass
+        if device is None:
             device = Device(parent=map_key(map_name))
         device.ip = ip
+
+        existing_devices = Device.query(Device.ip==ip, ancestor=map_key(map_name)).iter(keys_only=True)
+        ndb.delete_multi(existing_devices)
 
         key = device.put()
         if self.request.headers.get('Accept') == 'text/json':
