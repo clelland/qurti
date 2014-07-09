@@ -197,7 +197,7 @@ logEvent("writing " + command + " to socket " + socketId);
     if (data.substring(0,2) == "OK") {
       return("OK");
     } else {
-      throw new Error("Something");
+      throw new Error("Error reading socket after command");
     }
   });
 }
