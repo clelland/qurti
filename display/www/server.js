@@ -93,7 +93,7 @@ function startServer() {
     return register(addr, clientId);
   }).then(function(clientId) {
     logEvent("Got clientId: " + clientId);
-    setClientId(id);
+    setClientId(clientId);
   });
   chrome.socket.create('tcp', function(createInfo) {
     logEvent("Socket created: " + createInfo.socketId, "info");
