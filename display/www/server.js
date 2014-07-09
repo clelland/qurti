@@ -238,4 +238,4 @@ function drawFullImageFromURL(url, callback) {
   callback();
 }
 
-window.onload = startServer;
+window.addEventListener('load', startServer);
