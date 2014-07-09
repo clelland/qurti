@@ -70,6 +70,7 @@ function getDisplays() {
 }
 
 var displays;
+var currentImageUrl="Chrome_logo.png";
 
 function startController() {
   logEvent("Starting controller", "info");
@@ -90,10 +91,22 @@ function startController() {
     });
   });
   document.getElementById('drawURL').addEventListener('click', function(ev) {
-    var url = document.getElementById('url').value;
-    Q.all(drawUrlOnAllClients(url));
+    currentImageUrl = document.getElementById('url').value;
+    Q.all(drawUrlOnAllClients(currentImageUrl));
   });
-// here
+  document.getElementById('bblank').addEventListener('click', function(ev) {
+    Q.all(clearAllDisplays());
+  });
+  document.getElementById('brefimage').addEventListener('click', function(ev) {
+    Q.all(displayAllRegistrationImages());
+  });
+  document.getElementById('bdebug').addEventListener('click', function(ev) {
+    Q.all(debugAllDisplays());
+  });
+  document.getElementById('bmap').addEventListener('click', function(ev) {
+    showmap();
+    Q.all(sendMapToClients(mapdata));
+  });
 }
 
 function connect(display) {
@@ -139,6 +152,11 @@ function sendMap(socketId, map) {
 function drawFullPicture(socketId, url) {
     return sendCommand(socketId, "DRAWFULL", url);
 }
+
+function sendDebug(socketId) {
+    return sendCommand(socketId, "DEBUG");
+}
+
 
 // Returns an array of results (in the case where the passed-in function
 // returns a promise, returns an array of promises)
@@ -186,6 +204,14 @@ drawUrlOnAllClients = function(url) {
     return drawFullPicture(display.socketId, url);
   });
 };
+
+// Returns an array of promises
+debugAllDisplays = function(url) {
+  return forEachConnectedDisplay(function(display) {
+    return sendDebug(display.socketId);
+  });
+};
+
 
 // Returns a promise
 function sendCommand(socketId, command, params) {

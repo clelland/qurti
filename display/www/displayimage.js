@@ -1,3 +1,20 @@
+function drawRegistrationImage(regtoken){
+  blankImage();
+  var canvas = document.getElementById('myCanvas');
+  var context = canvas.getContext('2d');
+  var barwidth=canvas.width/10;
+  context.fillStyle="#FF0000";
+  context.fillRect(0,0, canvas.width,canvas.height);
+  context.fillStyle="#00FF00";
+  context.fillRect(barwidth,barwidth, canvas.width-(barwidth*2),canvas.height-(barwidth*2));
+
+  context.fillStyle="#0000FF";
+  context.fillRect(barwidth,barwidth, canvas.width-(barwidth*2),barwidth);
+  var txtsize = context.measureText(regtoken);
+  txtsize.height=20;
+  context.fillStyle="#000000";
+  context.strokeText(regtoken, canvas.width/2 - txtsize.width/2, canvas.height/2-txtsize.height/2);
+}
 
 function blankImage() {
   var canvas = document.getElementById('myCanvas');
@@ -43,7 +60,7 @@ function showimage (url) {
 // note that the 'top' is as defined by the device,
 // so if it auto-rotates - that might be a side
 
-var mapdata = {
+var mapdata_x = {
   "width": 640,
   "height": 480,
   "devices": {
@@ -55,4 +72,16 @@ var mapdata = {
   }
 } 
 
-
+var mapdate={
+  "width" : 2682,
+  "height" : 2082,
+  "devices" : {
+    "114" : { "points" : [[120,108],[405,111],[405,600],[120,600]]},
+    "143" : { "points" : [[1569,780],[642,780],[642,99],[1569,99]]},
+    "105" : { "points" : [[1860,480],[1860,33],[2523,33],[2523,480]]},
+    "123" : { "points" : [[1872,795],[1872,546],[2268,546],[2268,795]]},
+    "124" : { "points" : [[94,1966],[94,1000],[824,1000],[824,1966]]},
+    "115" : { "points" : [[1008,984],[1712,984],[1712,1956],[1008,1956]]},
+    "130" : { "points" : [[1916,946],[2562,946],[2562,1942],[1916,1942]]}
+  }
+}

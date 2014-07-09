@@ -214,6 +214,7 @@ function showDebugDisplay(callback) {
 
 function showRegistrationImage(callback) {
   logEvent("Showing registration image");
+  drawRegistrationImage(clientId);
   callback();
 }
 

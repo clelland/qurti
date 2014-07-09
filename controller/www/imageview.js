@@ -57,7 +57,6 @@ function showmap() {
     }
   }
   imageObj.src = 'Chromelogo.png';
-
 }
 
 // map data is the actual points of the outer corners of the device screen
@@ -76,11 +75,5 @@ var mapdata = {
   "d4": { "points" : [[270,303],[270,420],[ 40,420],[ 40,303]]},
   "d5": { "points" : [[444,104],[497,189],[327,294],[264,218]]}
   }
-} 
-
-
-window.addEventListener('load', function() {
-    document.querySelector('input#bshow').onclick=showimage; 
-    document.querySelector('input#bmap').onclick=showmap; 
-  });
+}
 
