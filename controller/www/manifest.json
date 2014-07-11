@@ -23,6 +23,6 @@
   },
   "permissions": [
     "<all_urls>",
-    {"socket": ["tcp-connect:*:8080"]}
+    {"socket": ["tcp-connect:*:*","tcp-listen:*:*"]}
   ]
 }

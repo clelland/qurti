@@ -24,6 +24,6 @@
   "permissions": [
     "<all_urls>",
     "storage",
-    {"socket": ["tcp-listen:*:8080"] }
+    {"socket": ["tcp-connect:*:*", "tcp-listen:*:*"] }
   ]
 }
