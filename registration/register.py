@@ -26,7 +26,7 @@ class RegistrationPage(webapp2.RequestHandler):
         map_name = DEFAULT_MAP_NAME
 
         devices = Device.query(ancestor=map_key(map_name)).order(Device.clientId).fetch(200)
-        rendered_devices = [{"id": x.key.integer_id(), "ip": x.ip} for x in devices]
+        rendered_devices = [{"id": x.key.integer_id(), "ip": x.ip, "controller_ip": x.controller_ip} for x in devices]
         template_values = {
             "registered_devices": rendered_devices,
         }

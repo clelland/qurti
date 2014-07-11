@@ -1,7 +1,7 @@
 var REG_SERVER="http://xx.xx.com/";
-var REGISTRATION_URL = REG_SERVER;;
+var REGISTRATION_URL = REG_SERVER;
 var SERVER_URL = REG_SERVER+"control";
-var MAP_URL = REG_SERVER+"map/"
+var MAP_URL = REG_SERVER+"map";
 var SERVER_PORT = 8080;
 
 function logEvent(text, level) {
@@ -90,12 +90,22 @@ function getServerInfo() {
   return Q.promise(function(y,n) {
     var xhr = new XMLHttpRequest();
 
-    xhr.open("GET", SERVER_URL);
+    xhr.open("GET", REGISTRATION_URL);
     xhr.setRequestHeader('Accept', 'text/json');
     xhr.onload = function() {
       logEvent("Server-Got response");
-      //y(JSON.parse(xhr.response));
-      y(JSON.parse('{ "ip" : "192.168.1.127"}'));
+      server_info = JSON.parse(xhr.response);
+      var server_ip;
+      server_info.forEach(function(item) {
+        if (item.ip === my_addr) {
+          logEvent("Server-Found controller");
+          server_ip = item.controller_ip;
+        }
+      });
+      if (server_ip) {
+          //y(JSON.parse('{ "ip" : "192.168.1.127"}'));
+          y(server_ip);
+      }
     };
     xhr.onerror = function() {
       logEvent("Failed to get server ip");
@@ -108,19 +118,22 @@ function getServerInfo() {
 var CONTROLLER_SERVER_PORT = 8080;
 var serversocket;
 var serverTimer;
+var my_addr;
 
 function startClient() {
   logEvent("Starting client", "info");
   Q.all([getListenAddress(), getClientId()]).then(function(items) {
     var addr = items[0];
+    my_addr = addr;
     var clientId = items[1];
     document.getElementById('addr').innerHTML=addr;
     return register(addr, clientId);
   }).then(function(clientId) {
     logEvent("Got clientId: " + clientId);
     setClientId(clientId);
+  }).then(function() {
+    connectServer();
   });
-  connectServer();
 }
 
 function connectServer() {
