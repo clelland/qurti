@@ -1,7 +1,7 @@
 var REG_SERVER="http://xx.xx.com/";
-var REGISTRATION_URL = REG_SERVER;;
+var REGISTRATION_URL = REG_SERVER;
 var SERVER_URL = REG_SERVER+"control";
-var MAP_URL = REG_SERVER+"map/"
+var MAP_URL = REG_SERVER+"map/";
 var DISPLAY_SERVER_PORT = 8080;
 
 function logEvent(text, level) {
@@ -163,7 +163,7 @@ function attachDisplay(socketid, socketinfo) {
       found=1;
     }
   }
-  if(found==0) {
+  if(found===0) {
     logEvent("Unknown display attached");
   }
 }
@@ -245,7 +245,7 @@ sendAllPing = function() {
   return forEachConnectedDisplay(function(display) {
     return sendPing(display.socketId);
   });
-}
+};
 
 // Returns an array of promises
 clearAllDisplays = function() {
