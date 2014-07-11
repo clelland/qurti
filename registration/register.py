@@ -19,6 +19,7 @@ def map_key(map_name=DEFAULT_MAP_NAME):
 class Device(ndb.Model):
     ip = ndb.StringProperty()
     clientId = ndb.IntegerProperty()
+    controller_ip = ndb.StringProperty()
 
 class RegistrationPage(webapp2.RequestHandler):
     def get(self):
@@ -62,6 +63,56 @@ class RegistrationPage(webapp2.RequestHandler):
         else:
             self.redirect('/')
 
+class Controller(webapp2.RequestHandler):
+    def get(self):
+        map_name = DEFAULT_MAP_NAME
+        controller_ip = self.request.get('controller_ip')
+
+        registered_devices = Device.query(Device.controller_ip==controller_ip, ancestor=map_key(map_name)).order(Device.clientId).fetch(200)
+        unregistered_devices = Device.query(Device.controller_ip==None, ancestor=map_key(map_name)).order(Device.clientId).fetch(200)
+        rendered_registered_devices = [{"id": x.key.integer_id(), "ip": x.ip} for x in registered_devices]
+        rendered_unregistered_devices = [{"id": x.key.integer_id(), "ip": x.ip} for x in unregistered_devices]
+        template_values = {
+            "registered_devices": rendered_registered_devices,
+            "unregistered_devices": rendered_unregistered_devices,
+            "controller_ip": controller_ip,
+        }
+        if self.request.headers.get('Accept') == 'text/json':
+            self.response.content_type = "text/json";
+            self.response.write(json.dumps(rendered_devices))
+        else:
+            template = JINJA_ENVIRONMENT.get_template('controller.html')
+            self.response.write(template.render(template_values))
+
+    def post(self):
+        map_name = DEFAULT_MAP_NAME
+
+        controller_ip = self.request.get('controller_ip')
+        ip = self.request.get('ip')
+        if ip:
+            ips = ip.split(",")
+        else:
+            ips = []
+        disassociate = self.request.get('disassociate')
+
+        for ip in ips:
+            devices = Device.query(Device.ip==ip, ancestor=map_key(map_name)).order(Device.clientId).fetch(1)
+            device = devices[0]
+            if disassociate:
+                device.controller_ip = None
+            else:
+                device.controller_ip = controller_ip
+            key = device.put()
+
+        if self.request.headers.get('Accept') == 'text/json':
+            self.response.content_type = "text/plain";
+            self.response.write(key.integer_id())
+        else:
+            if self.request.get('returnurl'):
+                self.redirect(self.request.get('returnurl'))
+            else:
+                self.redirect('/control?controller_ip=' + controller_ip)
+
 class ClearRegistrations(webapp2.RequestHandler):
     def post(self):
         map_name = DEFAULT_MAP_NAME
@@ -73,4 +124,5 @@ class ClearRegistrations(webapp2.RequestHandler):
 application = webapp2.WSGIApplication([
     ('/', RegistrationPage),
     ('/clear', ClearRegistrations),
+    ('/control', Controller),
 ], debug=True)

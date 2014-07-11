@@ -1,7 +1,7 @@
 var REG_SERVER="http://xx.xx.com/";
 var REGISTRATION_URL = REG_SERVER;
-var SERVER_URL = REG_SERVER+"control";
-var MAP_URL = REG_SERVER+"map/";
+var REGISTER_SERVER_URL = REG_SERVER+"control";
+var MAP_URL = REG_SERVER+"map";
 var DISPLAY_SERVER_PORT = 8080;
 
 function logEvent(text, level) {
@@ -68,12 +68,36 @@ function getDisplays() {
   });
 }
 
-function registerServer(addr) {
+/* Expects an array of IP addresses
+ * returns a promise.
+ */
+function associateDisplays(addrs) {
     return Q.promise(function(y,n) {
     var xhr = new XMLHttpRequest();
     var formData = new FormData();
 
     xhr.open("POST", REGISTER_SERVER_URL);
+    xhr.setRequestHeader('Accept', 'text/json');
+    xhr.onload = function() {
+      y(xhr.response);
+    };
+    xhr.onerror = function() {
+      n(xhr);
+    };
+    formData.append("controller_ip", my_addr);
+    formData.append("ip", addrs.join(","));
+    logEvent("Associating displays at " + REGISTER_SERVER_URL);
+    xhr.send(formData);
+  });
+}
+
+
+function registerServer(addr) {
+    return Q.promise(function(y,n) {
+    var xhr = new XMLHttpRequest();
+    var formData = new FormData();
+
+    xhr.open("POST", REGISTRATION_URL);
     xhr.setRequestHeader('Accept', 'text/json');
     xhr.onload = function() {
       y(xhr.response);
@@ -88,13 +112,14 @@ function registerServer(addr) {
 }
 
 var displays;
+var my_addr;
 var currentImageUrl="Chrome_logo.png";
 
 function startController() {
   logEvent("Starting controller", "info");
   getListenAddress().then(function(addr) {
     document.getElementById('addr').innerHTML=addr;
-    registerServer(addr);
+    my_addr = addr;
   });
   getMap().then(function(map) {
     mapdata = map;

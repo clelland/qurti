@@ -14,3 +14,15 @@ indexes:
   ancestor: yes
   properties:
   - name: clientId
+
+- kind: Device
+  ancestor: yes
+  properties:
+  - name: controller_ip
+  - name: clientId
+
+- kind: Device
+  ancestor: yes
+  properties:
+  - name: ip
+  - name: clientId
