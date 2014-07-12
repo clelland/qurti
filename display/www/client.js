@@ -133,7 +133,7 @@ function startClient() {
     setClientId(clientId);
   }).then(function() {
     connectServer();
-  });
+  }).done();
 }
 
 function connectServer() {
