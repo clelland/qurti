@@ -104,7 +104,7 @@ function getServerInfo() {
       });
       if (server_ip) {
           //y(JSON.parse('{ "ip" : "192.168.1.127"}'));
-          y(server_ip);
+          y({ip: server_ip});
       }
     };
     xhr.onerror = function() {
